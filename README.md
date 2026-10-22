@@ -58,7 +58,48 @@ I compare three policies:
 
 For each feasible limit, I calculate the probability distribution of the number of guests arriving, assuming independent cancellation outcomes. This gives an expected profit for every possible decision. The optimizer simply selects the integer limit with the highest expected profit. The policies can then be compared using the cancellation outcomes in the held-out test period.
 
-The model is intentionally small enough to solve by evaluating every feasible overbooking limit; a mixed-integer solver is not required. The current committed notebook includes the policy-comparison code, but its saved optimization outputs are not from a successful clean run, so I have not reported a final profit improvement here.
+## Overbooking Optimization Results
+
+The optimization model was evaluated on 111 eligible arrival dates from the held-out test set. Three policies were compared: no overbooking, optimization based on the historical cancellation rate, and optimization using customer-specific cancellation probabilities from Logistic Regression.
+
+For each date, the model selected an overbooking limit that maximized expected profit. The decisions were then evaluated using observed cancellation outcomes and the assumed room revenue and overbooking penalties.
+
+### Comparison of Overbooking Strategies
+
+| Metric | No Overbooking | Historical Rate | ML Optimization |
+|---|---:|---:|---:|
+| Average daily simulated profit | 564.73 | 685.14 | **716.53** |
+| Average room occupancy | 53.78% | 71.17% | **82.25%** |
+| Average additional bookings | 0.00 | 2.78 | 5.22 |
+| Average bumped guests per day | 0.00 | 0.27 | 0.64 |
+
+![Average Simulated Profit by Overbooking Strategy](Average%20Simulated%20Profit%20by%20Overbooking%20Strategy.png)
+
+The ML-based policy achieved the highest average realized simulated profit, outperforming historical-rate optimization by **4.6%** and the no-overbooking strategy by **26.9%**.
+
+The additional profit was accompanied by higher room occupancy. However, ML optimization also resulted in more guests exceeding hotel capacity: an average of 0.64 per day, compared with 0.27 under historical-rate optimization. This illustrates the trade-off between increasing occupancy and the cost of overbooking.
+
+### Value of Individualized Cancellation Predictions
+
+To evaluate the contribution of machine learning, daily realized profits from ML-based optimization were compared directly with those from historical-rate optimization.
+
+The results show that:
+
+- **40.5%** of days: ML optimization performed better.
+- **37.8%** of days: Both policies generated equal profit.
+- **21.6%** of days: Historical-rate optimization performed better.
+
+Overall, ML-based optimization performed **at least as well as historical-rate optimization on 78.4% of evaluated days**.
+
+The average simulated profit improvement was 31.40 per day, corresponding to 3,485 across the 111 eligible days.
+
+These findings suggest that individualized cancellation probabilities can improve overbooking decisions compared with relying on a single historical cancellation rate. The improvement was not consistent across every date, however, and the ML-based strategy sometimes increased the number of guests who could not be accommodated.
+
+### Interpretation and Limitations
+
+The results demonstrate how cancellation predictions can inform operational decisions rather than being used solely for classification.
+
+The financial improvements are simulated and depend on the assumed hotel capacity, room revenue, overbooking penalty, and independence of cancellation outcomes. They should not be interpreted as actual revenue gains achieved by the hotel.
 
 ## Running the notebook
 
