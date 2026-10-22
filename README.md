@@ -91,8 +91,6 @@ The results show that:
 
 Overall, ML-based optimization performed **at least as well as historical-rate optimization on 78.4% of evaluated days**.
 
-The average simulated profit improvement was 31.40 per day, corresponding to 3,485 across the 111 eligible days.
-
 These findings suggest that individualized cancellation probabilities can improve overbooking decisions compared with relying on a single historical cancellation rate. The improvement was not consistent across every date, however, and the ML-based strategy sometimes increased the number of guests who could not be accommodated.
 
 ### Interpretation and Limitations
