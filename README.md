@@ -1,14 +1,14 @@
 # Hotel Cancellation Prediction and Overbooking Optimization
 
-How much does it help to predict *which* guests will cancel, rather than assuming every booking has the same cancellation risk?
+Hotel cancellations create uncertainty in room availability and revenue. Accepting too few reservations may leave rooms unoccupied, while accepting too many creates the risk of having more guests arrive than the hotel can accommodate.
 
-This project looks at that question in two parts. First, I compare classification models that estimate the probability of a hotel reservation being canceled. Then I use those probabilities to choose an overbooking limit, balancing the value of filling empty rooms against the cost of having more guests arrive than the hotel can accommodate.
+This project investigates whether customer-level cancellation predictions can improve overbooking decisions compared with relying on historical cancellation rates.
 
-The full analysis is in [the Jupyter notebook](Hotel%20Cancellation%20Prediction%20and%20Overbooking%20Optimization.ipynb).
+The analysis combines machine learning with a discrete optimization model. Several classification algorithms are evaluated to estimate cancellation probabilities, which are subsequently used to determine the number of additional reservations that maximizes expected profit.
 
 ## Data and preparation
 
-I use the [Hotel Booking Demand dataset](https://github.com/rfordatascience/tidytuesday/blob/main/data/2020/2020-02-11/hotels.csv), available through TidyTuesday. To keep the booking decision manageable, I restrict the analysis to City Hotel reservations for **one night**, with at least one adult. This leaves **13,227 reservations**.
+I use the [Hotel Booking Demand dataset]("https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv"), available through TidyTuesday. To keep the booking decision manageable, I restrict the analysis to City Hotel reservations for **one night**, with at least one adult. This leaves **13,227 reservations**.
 
 The preparation includes examining missing values and unusual room rates, creating indicators for whether an agent or company ID is recorded, and extracting arrival-date features. For cancellation prediction, I use 14 booking-related features, including lead time, previous booking history, guest counts, market segment, distribution channel, and reserved room type. Outcome-related fields such as `reservation_status` and `reservation_status_date` are excluded.
 
