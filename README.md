@@ -8,7 +8,7 @@ The analysis combines machine learning with a discrete optimization model. Sever
 
 ## Data and preparation
 
-I use the [Hotel Booking Demand dataset]("https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv"), available through TidyTuesday. To keep the booking decision manageable, I restrict the analysis to City Hotel reservations for **one night**, with at least one adult. This leaves **13,227 reservations**.
+I use the [Hotel Booking Demand dataset](https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv), available through TidyTuesday. To keep the booking decision manageable, I restrict the analysis to City Hotel reservations for **one night**, with at least one adult. This leaves **13,227 reservations**.
 
 The preparation includes examining missing values and unusual room rates, creating indicators for whether an agent or company ID is recorded, and extracting arrival-date features. For cancellation prediction, I use 14 booking-related features, including lead time, previous booking history, guest counts, market segment, distribution channel, and reserved room type. Outcome-related fields such as `reservation_status` and `reservation_status_date` are excluded.
 
@@ -48,6 +48,21 @@ I also inspect reliability curves to see whether predicted cancellation probabil
 
 ## From predictions to overbooking decisions
 
+Optimization Formulation
+
+Let (x) represent the number of additional reservations accepted beyond hotel capacity. For each arrival date, the model selects the feasible overbooking limit that maximizes expected profit:
+
+$$
+\max_{x \in {0,\ldots,M}}
+\mathbb{E}\left[
+r\min(A_x,C)-b\max(A_x-C,0)
+\right]
+$$
+
+where (C) is hotel capacity, (M) is the maximum feasible overbooking limit, (A_x) is the random number of arriving guests, (r) is room revenue, and (b) is the penalty for each guest exceeding capacity.
+
+The arrival distribution is calculated using individual cancellation probabilities under an independence assumption. Expected profit is evaluated for every feasible integer decision, and the overbooking limit with the highest expected value is selected.
+
 For the decision experiment, I assume a hotel with **10 rooms** and allow up to **15 additional reservations**, subject to the number of candidate bookings available for an arrival date. The illustrative economics are **105 per occupied room** and a **230 penalty per arriving guest who cannot be accommodated**.
 
 I compare three policies:
@@ -73,9 +88,10 @@ For each date, the model selected an overbooking limit that maximized expected p
 | Average additional bookings | 0.00 | 2.78 | 5.22 |
 | Average bumped guests per day | 0.00 | 0.27 | 0.64 |
 
+The following figure compares the average realized simulated profit of the three policies across 111 eligible arrival dates.
 ![Average Simulated Profit by Overbooking Strategy](Average%20Simulated%20Profit%20by%20Overbooking%20Strategy.png)
 
-The ML-based policy achieved the highest average realized simulated profit, outperforming historical-rate optimization by **4.6%** and the no-overbooking strategy by **26.9%**.
+ML-based optimization produced the highest average simulated profit (716.53), followed by historical-rate optimization (685.14) and no overbooking (564.73). This corresponds to a 4.6% improvement over the historical-rate strategy and a 26.9% improvement over accepting reservations only up to capacity.
 
 The additional profit was accompanied by higher room occupancy. However, ML optimization also resulted in more guests exceeding hotel capacity: an average of 0.64 per day, compared with 0.27 under historical-rate optimization. This illustrates the trade-off between increasing occupancy and the cost of overbooking.
 
