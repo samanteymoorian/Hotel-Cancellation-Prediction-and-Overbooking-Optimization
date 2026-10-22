@@ -109,12 +109,6 @@ Overall, ML-based optimization performed **at least as well as historical-rate o
 
 These findings suggest that individualized cancellation probabilities can improve overbooking decisions compared with relying on a single historical cancellation rate. The improvement was not consistent across every date, however, and the ML-based strategy sometimes increased the number of guests who could not be accommodated.
 
-### Interpretation and Limitations
-
-The results demonstrate how cancellation predictions can inform operational decisions rather than being used solely for classification.
-
-The financial improvements are simulated and depend on the assumed hotel capacity, room revenue, overbooking penalty, and independence of cancellation outcomes. They should not be interpreted as actual revenue gains achieved by the hotel.
-
 ## Running the notebook
 
 Install the main dependencies:
