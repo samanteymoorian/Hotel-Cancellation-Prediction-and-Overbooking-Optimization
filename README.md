@@ -1,0 +1,94 @@
+# Hotel Cancellation Prediction and Overbooking Optimization
+
+How much does it help to predict *which* guests will cancel, rather than assuming every booking has the same cancellation risk?
+
+This project looks at that question in two parts. First, I compare classification models that estimate the probability of a hotel reservation being canceled. Then I use those probabilities to choose an overbooking limit, balancing the value of filling empty rooms against the cost of having more guests arrive than the hotel can accommodate.
+
+The full analysis is in [the Jupyter notebook](Hotel%20Cancellation%20Prediction%20and%20Overbooking%20Optimization.ipynb).
+
+## Data and preparation
+
+I use the [Hotel Booking Demand dataset](https://github.com/rfordatascience/tidytuesday/blob/main/data/2020/2020-02-11/hotels.csv), available through TidyTuesday. To keep the booking decision manageable, I restrict the analysis to City Hotel reservations for **one night**, with at least one adult. This leaves **13,227 reservations**.
+
+The preparation includes examining missing values and unusual room rates, creating indicators for whether an agent or company ID is recorded, and extracting arrival-date features. For cancellation prediction, I use 14 booking-related features, including lead time, previous booking history, guest counts, market segment, distribution channel, and reserved room type. Outcome-related fields such as `reservation_status` and `reservation_status_date` are excluded.
+
+Rather than randomly mixing bookings across years, I split the data chronologically by arrival date:
+
+| Split | Reservations | Purpose |
+| --- | ---: | --- |
+| Training | 8,807 | Fit the models |
+| Validation | 1,505 | Tune parameters and choose a model |
+| Test | 2,915 | Evaluate the selected model |
+
+Scaling and one-hot encoding are handled inside scikit-learn pipelines, with the preprocessing fitted only on the training data during model development.
+
+## Predicting cancellations
+
+I compare Logistic Regression, Random Forest, and LightGBM against a baseline that predicts the same historical cancellation rate for every reservation. I tune the three ML models on the validation set, using **Brier score** as the main selection metric. Since the optimization step uses probabilities, their quality matters more here than classification accuracy at a fixed threshold.
+
+### Validation results
+
+| Model | Brier score (lower is better) |
+| --- | ---: |
+| **Logistic Regression** | **0.1805** |
+| Random Forest | 0.1810 |
+| Historical cancellation rate | 0.2031 |
+| LightGBM | 0.2070 |
+
+Logistic Regression performed best on validation, though Random Forest was close. I refitted the selected Logistic Regression model on the combined training and validation periods before evaluating it on the test set.
+
+### Held-out test results
+
+| Model | ROC-AUC | Brier score | Log loss |
+| --- | ---: | ---: | ---: |
+| Historical cancellation rate | 0.5000 | 0.2276 | 0.6482 |
+| **Logistic Regression** | **0.7612** | **0.1802** | **0.5349** |
+
+I also inspect reliability curves to see whether predicted cancellation probabilities match observed cancellation frequencies. I use the probabilities directly; I have not fitted a separate post-hoc calibration model.
+
+## From predictions to overbooking decisions
+
+For the decision experiment, I assume a hotel with **10 rooms** and allow up to **15 additional reservations**, subject to the number of candidate bookings available for an arrival date. The illustrative economics are **105 per occupied room** and a **230 penalty per arriving guest who cannot be accommodated**.
+
+I compare three policies:
+
+- **No overbooking:** Accept at most 10 reservations.
+- **Historical-rate optimization:** Choose an overbooking limit using the overall cancellation rate estimated from development data.
+- **ML-based optimization:** Choose the limit using the predicted cancellation probability of each candidate reservation.
+
+For each feasible limit, I calculate the probability distribution of the number of guests arriving, assuming independent cancellation outcomes. This gives an expected profit for every possible decision. The optimizer simply selects the integer limit with the highest expected profit. The policies can then be compared using the cancellation outcomes in the held-out test period.
+
+The model is intentionally small enough to solve by evaluating every feasible overbooking limit; a mixed-integer solver is not required. The current committed notebook includes the policy-comparison code, but its saved optimization outputs are not from a successful clean run, so I have not reported a final profit improvement here.
+
+## Running the notebook
+
+Install the main dependencies:
+
+```bash
+pip install numpy pandas matplotlib scikit-learn lightgbm notebook
+```
+
+Then open the notebook:
+
+```bash
+jupyter notebook "Hotel Cancellation Prediction and Overbooking Optimization.ipynb"
+```
+
+The notebook downloads the public CSV directly from GitHub, so there is no separate local data file to prepare. Run the cells from top to bottom.
+
+## Limitations
+
+This is a **simulation of an overbooking decision**, not a reconstruction of a hotel's actual revenue management system. In particular:
+
+- Hotel capacity, room revenue, and bumping penalties are assumed rather than observed.
+- The dataset contains recorded reservations, not rejected booking requests or a complete booking-acceptance history. Booking order is approximated using lead time.
+- The experiment uses one-night reservations only and treats non-canceled bookings as arrivals.
+- The arrival distribution assumes independent cancellations.
+- Some recorded features may have been updated after the original booking was made, so the historical data cannot perfectly reproduce booking-time information.
+- Although the dataset includes ADR and deposit type, the current optimization uses a fixed room-revenue assumption and does not model cancellation-fee income.
+
+The aim is to examine whether individualized cancellation probabilities can improve a clearly defined decision rule, while keeping the assumptions and limitations visible.
+
+## Data source
+
+[Hotel Booking Demand — TidyTuesday (2020-02-11)](https://github.com/rfordatascience/tidytuesday/tree/main/data/2020/2020-02-11)
